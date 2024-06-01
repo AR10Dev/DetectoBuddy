@@ -1,4 +1,4 @@
 ultralytics
 opencv-python-headless
 customtkinter
-nukita
+nuitka
