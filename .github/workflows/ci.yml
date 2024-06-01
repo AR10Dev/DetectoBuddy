@@ -1,10 +1,11 @@
-name: Build
-
-on:
-  push:
-    branches: [ main ]
+name: CI
+on: 
   pull_request:
-    branches: [ main ]
+    branches:
+      - master
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -27,12 +28,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Compile with Nuitka
+    - name: Install PyInstaller
       run: |
-        python -m nuitka --standalone --follow-imports main.py
+        pip install pyinstaller
+
+    - name: Compile with PyInstaller
+      run: |
+        pyinstaller --onefile main.py
 
     - name: Upload executable
       uses: actions/upload-artifact@v2
       with:
         name: main-${{ matrix.os }}
-        path: main.dist/main${{ runner.os == 'Windows' && '.exe' || '' }}
+        path: dist/main${{ runner.os == 'Windows' && '.exe' || '' }}
