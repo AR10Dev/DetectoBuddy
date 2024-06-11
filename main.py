@@ -1,237 +1,203 @@
-import tkinter as tk
-import customtkinter as ctk
+import customtkinter
+from customtkinter import *
 from ultralytics import YOLO
 import cv2
 import math
-from tkinter import filedialog
 from PIL import Image, ImageTk
+import PIL
 
-ctk.set_appearance_mode("Dark")  
-ctk.set_default_color_theme("dark-blue")  
+IMG_PATH = None
+VIDEO_PATH = None
+MODEL_PATH = "Yolo/yolov8n.pt"
+classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
+              "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
+              "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
+              "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat",
+              "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
+              "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli",
+              "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed",
+              "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone",
+              "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+              "teddy bear", "hair drier", "toothbrush"
+              ]
 
 
-class ObjectDetector:
-    def __init__(self, selected_class):
-        self.model = YOLO("Yolo/yolov8n.pt")
-        self.classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
-                           "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
-                           "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
-                           "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat",
-                           "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-                           "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli",
-                           "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed",
-                           "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone",
-                           "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-                           "teddy bear", "hair drier", "toothbrush"
-                           ]
-        
-        self.selected_class = selected_class
+class AutoDetectorApp(CTk):
+    def __init__(self):
+        super().__init__()
 
-    def get_file_path(self):
-        root = tk.Tk()
-        root.withdraw()
-        file_path = filedialog.askopenfilename()
-        return file_path
+        # Set window title and disable resizing
+        self.video_detect_button = None
+        self.video_path = None
+        self.video_error_path_header = None
+        self.video_path_header = None
+        self.image_detect_button = None
+        self.image_path = None
+        self.image_error_path_header = None
+        self.image_path_header = None
+        self.title("AutoDetector v1.0.0")
+        self.resizable(False, False)
 
-    def draw_boxes(self, img, results):
-        for r in results:
-            boxes = r.boxes
+        # Create tab view
+        self.tab_view = Tabs(master=self, width=800, height=600)
+        self.tab_view.grid(row=0, column=0, padx=20, pady=20)
 
-            for box in boxes:
-                # bounding box
-                x1, y1, x2, y2 = box.xyxy[0]
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        # Initialize Image and Video tab elements
+        self.initialize_image_tab_elements()
+        self.initialize_video_tab_elements()
 
-                # put box in image
-                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+    def initialize_image_tab_elements(self):
+        self.image_path_header = CTkLabel(master=self.tab_view.tab("Image"), text="", font=("Arial", 20))
+        self.image_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-                # confidence
-                confidence = math.ceil((box.conf[0]*100))/100
-                print("Confidence --->", confidence)
+        self.image_error_path_header = CTkLabel(master=self.tab_view.tab("Image"), text="", font=("Arial", 20),
+                                                text_color="red")
+        self.image_error_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-                # class name
-                cls = int(box.cls[0])
-                print("Class name -->", self.classNames[cls])
+        self.image_path = CTkLabel(master=self.tab_view.tab("Image"), text="", font=("Arial", 15))
+        self.image_path.place(relx=0.5, rely=0.65, anchor="center")
 
-                # object details
-                org = [x1, y1]
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                fontScale = 1
-                color = (255, 0, 0)
-                thickness = 2
+        self.image_detect_button = CTkButton(master=self.tab_view.tab("Image"), text="Detect now", font=("Arial", 30),
+                                             command=lambda: image_detection(), width=150, height=18,
+                                             corner_radius=10)
+        self.image_detect_button.place_forget()
 
-                cv2.putText(
-                    img, self.classNames[cls], org, font, fontScale, color, thickness)
+    def initialize_video_tab_elements(self):
+        self.video_path_header = CTkLabel(master=self.tab_view.tab("Video"), text="", font=("Arial", 20))
+        self.video_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-    def webcam(self, image_label):
-        cap = cv2.VideoCapture(0)
-        cap.set(3, 640)
-        cap.set(4, 480)
+        self.video_error_path_header = CTkLabel(master=self.tab_view.tab("Video"), text="", font=("Arial", 20),
+                                                text_color="red")
+        self.video_error_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-        def update_frame():
-            success, img = cap.read()
-            if success:
-                img = cv2.flip(img, 1)
-                results = self.model(img, stream=True)
-                self.draw_boxes(img, results)
+        self.video_path = CTkLabel(master=self.tab_view.tab("Video"), text="", font=("Arial", 15))
+        self.video_path.place(relx=0.5, rely=0.65, anchor="center")
 
-                # Convert the image from BGR to RGB, then to PIL format and then to ImageTk format
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(img)
-                imgtk = ImageTk.PhotoImage(image=img)
+        self.video_detect_button = CTkButton(master=self.tab_view.tab("Video"), text="Detect now", font=("Arial", 30),
+                                             command=lambda: print("g"), width=150, height=18,
+                                             corner_radius=10)
+        self.video_detect_button.place_forget()
 
-                # Update the label
-                image_label.configure(image=imgtk)
-                image_label.image = imgtk
 
-                if cv2.waitKey(1) == ord('q'):
-                    cap.release()
-                    cv2.destroyAllWindows()
-                else:
-                    # Schedule the next update
-                    image_label.after(10, update_frame)
-            else:
-                cap.release()
-                cv2.destroyAllWindows()
+class Tabs(CTkTabview):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
 
-        # Start the update process
-        update_frame()
+        # Create tabs
+        self.add("Home")
+        self.add("Image")
+        self.add("Video")
+        self.add("Webcam")
 
-    def image(self, image_label):
-        PATH = self.get_file_path()
+        # Home tab content
+        home_title = CTkLabel(master=self.tab("Home"), text="Welcome to", font=("Arial", 40))
+        home_title.place(relx=0.5, rely=0.1, anchor="center")
+        home_subtitle = CTkLabel(master=self.tab("Home"), text="AutoDetector", font=("Arial", 60), text_color="#007bff")
+        home_subtitle.place(relx=0.5, rely=0.2, anchor="center")
+        home_description = CTkLabel(master=self.tab("Home"),
+                                    text="This is a simple object detection application that can detect\nobjects in "
+                                         "images, videos, and webcam\n\n\n\nUse the tabs to navigate the application.",
+                                    font=("Arial", 20))
+        home_description.place(relx=0.5, rely=0.5, anchor="center")
+        home_footer = CTkLabel(master=self.tab("Home"),
+                               text="Developed by: Luca Facchini (LF-D3v) & Avaab Razzaq (AR10Dev)", font=("Arial", 13))
+        home_footer.place(relx=0.5, rely=0.9, anchor="center")
 
-        img = cv2.imread(PATH)
-        results = self.model(img)
-        self.draw_boxes(img, results)
+        # Image tab content
+        image_title = CTkLabel(master=self.tab("Image"), text="Detection from", font=("Arial", 30))
+        image_title.place(relx=0.5, rely=0.1, anchor="center")
+        image_subtitle = CTkLabel(master=self.tab("Image"), text="Image", font=("Arial", 40), text_color="#007bff")
+        image_subtitle.place(relx=0.5, rely=0.2, anchor="center")
 
-        # Convert the image from BGR to RGB, then to PIL format and then to ImageTk format
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        imgtk = ImageTk.PhotoImage(image=img)
+        image_select_file_button = CTkButton(master=self.tab("Image"), text="Select Image", font=("Arial", 30),
+                                             command=lambda: open_file_dialog('Image'), width=150, height=18,
+                                             corner_radius=10)
+        image_select_file_button.place(relx=0.5, rely=0.4, anchor="center")
 
-        # Update the label
-        image_label.configure(image=imgtk)
-        image_label.image = imgtk
+        # Video tab content
+        video_title = CTkLabel(master=self.tab("Video"), text="Detection from", font=("Arial", 30))
+        video_title.place(relx=0.5, rely=0.1, anchor="center")
+        video_subtitle = CTkLabel(master=self.tab("Video"), text="Video", font=("Arial", 40), text_color="#007bff")
+        video_subtitle.place(relx=0.5, rely=0.2, anchor="center")
 
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        video_select_file_button = CTkButton(master=self.tab("Video"), text="Select Video", font=("Arial", 30),
+                                             command=lambda: open_file_dialog('Video'), width=150, height=18,
+                                             corner_radius=10)
+        video_select_file_button.place(relx=0.5, rely=0.4, anchor="center")
 
-    def video(self, image_label):
-        PATH = self.get_file_path()
 
-        cap = cv2.VideoCapture(PATH)
+def open_file_dialog(selection):
+    global IMG_PATH
+    if selection == 'Image':
+        IMG_PATH = filedialog.askopenfilename()
+        print_file_path(selection, IMG_PATH)
+    elif selection == 'Video':
+        VIDEO_PATH = filedialog.askopenfilename()
+        print_file_path(selection, VIDEO_PATH)
 
-        while True:
-            success, img = cap.read()
 
-            if not success:
-                break
+def print_file_path(selection, file_path):
+    if selection == 'Image':
+        # check if the file format is valid.
+        if file_path.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')):
+            app.image_path_header.configure(text="Currently selected image", text_color="green")
+            app.image_error_path_header.configure(text="")
 
-            results = self.model(img)
-            self.draw_boxes(img, results)
+            app.image_path.configure(text=file_path)
+            app.image_detect_button.place(relx=0.5, rely=0.85, anchor="center")
+        elif file_path == "":
+            app.image_error_path_header.configure(text="No file selected", text_color="red")
+            app.image_path_header.configure(text="")
+            app.image_path.configure(text="")
+            app.image_detect_button.place_forget()
+        else:
+            app.image_error_path_header.configure(text="Invalid file format", text_color="red")
+            app.image_path_header.configure(text="")
+            app.image_path.configure(text="")
+            app.image_detect_button.place_forget()
 
-            # Convert the image from BGR to RGB, then to PIL format and then to ImageTk format
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(img)
-            imgtk = ImageTk.PhotoImage(image=img)
+    elif selection == 'Video':
+        # check if the file format is valid.
+        if file_path.endswith(('.mp4', '.avi', '.mov', '.flv', '.wmv', '.mkv')):
+            app.video_path_header.configure(text="Currently selected video", text_color="green")
+            app.video_error_path_header.configure(text="")
 
-            # Update the label
-            image_label.configure(image=imgtk)
-            image_label.image = imgtk
+            app.video_path.configure(text=file_path)
+            app.video_detect_button.place(relx=0.5, rely=0.85, anchor="center")
+        elif file_path == "":
+            app.video_error_path_header.configure(text="No file selected", text_color="red")
+            app.video_path_header.configure(text="")
+            app.video_path.configure(text="")
+            app.video_detect_button.place_forget()
+        else:
+            app.video_error_path_header.configure(text="Invalid file format", text_color="red")
+            app.video_path_header.configure(text="")
+            app.video_path.configure(text="")
+            app.video_detect_button.place_forget()
 
-            if cv2.waitKey(1) == ord('q'):
-                break
 
-        cap.release()
-        cv2.destroyAllWindows()
+# So far, this function will ONLY display the image in a new window. We will implement the detection part later.
+def cv2_to_imagetk():
+    image = cv2.imread(IMG_PATH)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    imagePIL = PIL.Image.fromarray(image)
+    imageTk = ImageTk.PhotoImage(image = imagePIL)
 
-    def draw_boxes(self, img, results):
-        for r in results:
-            boxes = r.boxes
+    return imageTk
+def image_detection():
+    new_window = CTk()
+    new_window.title("Detected Image")
+    new_window.geometry("800x600")
+    new_window.resizable(False, False)
 
-            for box in boxes:
-                # class name
-                cls = int(box.cls[0])
-                class_name = self.classNames[cls]
+    # Load the image with opencv2
+    imagetk = cv2_to_imagetk()
 
-                if class_name == self.selected_class:
-                    # bounding box
-                    x1, y1, x2, y2 = box.xyxy[0]
-                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-
-                    # put box in image
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
-
-                    # confidence
-                    confidence = math.ceil((box.conf[0]*100))/100
-                    print("Confidence --->", confidence)
-
-                    print("Class name -->", class_name)
-
-                    # object details
-                    org = [x1, y1]
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    fontScale = 1
-                    color = (255, 0, 0)
-                    thickness = 2
-
-                    cv2.putText(img, class_name, org, font, fontScale, color, thickness)
-
-def main():
-    root = ctk.CTk()
-    root.geometry("400x350")
-    root.title("Object Detector")
-
-    selected_class = "person"
-    detector = ObjectDetector(selected_class)
-
-    # Input Type Frame
-    input_frame = ctk.CTkFrame(master=root, corner_radius=10)
-    input_frame.pack(pady=20)
-
-    input_label = ctk.CTkLabel(master=input_frame, text="Input Type:", font=("Roboto", 14))
-    input_label.pack(side=tk.LEFT, padx=10)
-
-    input_var = tk.StringVar(root)
-    input_var.set("Webcam")
-    input_options = ctk.CTkOptionMenu(master=input_frame, variable=input_var, values=["Webcam", "Image", "Video"])
-    input_options.pack(side=tk.RIGHT, padx=10)
-
-    # Class Selection Frame
-    class_frame = ctk.CTkFrame(master=root, corner_radius=10)
-    class_frame.pack(pady=10)
-
-    class_label = ctk.CTkLabel(master=class_frame, text="Select Class:", font=("Roboto", 14))
-    class_label.pack(side=tk.LEFT, padx=10)
-
-    class_var = tk.StringVar(root)
-    class_var.set(selected_class)
-    class_options = ctk.CTkOptionMenu(master=class_frame, variable=class_var, values=detector.classNames)
-    class_options.pack(side=tk.RIGHT, padx=10)
-
-    # Image label
-    image_label = ctk.CTkLabel(master=root)
+    # create a label in the new window to display the image
+    image_label = CTkLabel(master=new_window, image=imagetk)
     image_label.pack()
 
-    # Start Button
-    def start_detection():
-        nonlocal detector
-        selected_class = class_var.get()
-        detector.selected_class = selected_class
+    new_window.mainloop()
 
-        choice = input_var.get()
-
-        if choice == 'Webcam':
-            detector.webcam(image_label)
-        elif choice == 'Image':
-            detector.image(image_label)
-        elif choice == 'Video':
-            detector.video(image_label)
-
-    start_button = ctk.CTkButton(master=root, text="Start Detection", command=start_detection, corner_radius=8, font=("Roboto", 14))
-    start_button.pack(pady=20)
-
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
+app = AutoDetectorApp()
+app.mainloop()
