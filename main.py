@@ -184,7 +184,17 @@ def cv2_to_imagetk():
     imageTk = ImageTk.PhotoImage(image = imagePIL)
 
     return imageTk
+
+
 def image_detection():
+    # check if the file still exists, or if the file got changed
+    if not os.path.exists(IMG_PATH):
+        app.image_error_path_header.configure(text="File not found. Did it get deleted or moved?", text_color="red")
+        app.image_path_header.configure(text="")
+        app.image_path.configure(text="")
+        app.image_detect_button.place_forget()
+        return
+
     # Load YOLO model
     model = YOLO(MODEL_PATH)
 
@@ -195,28 +205,35 @@ def image_detection():
     img_window = customtkinter.CTkToplevel()
     img_window.title("Detected Image")
     img_window.resizable(False, False)
-    img_window.minsize(720, 480)  # Set minimum size to 720x480
-    img_window.maxsize(1240, 720)  # Set maximum size to 1240x720
+    img_window.minsize(720, 1080)  # Set minimum size to 720x480
+    img_window.maxsize(1240, 1780)  # Set maximum size to 1240x720
 
     # Create the "Go Back" button and place it at the top of the window, leaving some margin
     back_button = customtkinter.CTkButton(img_window, text="Go Back")
     back_button.pack(pady=10)
+
+    # Create a text box for detections
+    detections_textbox = customtkinter.CTkTextbox(img_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox.pack(side="top", fill="both", expand=True)
+
+    # Insert a title
+    detections_textbox.insert("end", "Detected Objects\n\n", "title")
+
+
 
     # Load the image
     img = cv2.imread(IMG_PATH)
     results = model(img)
 
     # Process the resized image with YOLO model and draw bounding boxes
-    for r in results:
+    for i, r in enumerate(results):
         boxes = r.boxes
-        for box in boxes:
+        for j, box in enumerate(boxes):
             x1, y1, x2, y2 = box.xyxy[0]
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
             cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
             confidence = math.ceil((box.conf[0] * 100)) / 100
-            print("Confidence --->", confidence)
             cls = int(box.cls[0])
-            print("Class name -->", classNames[cls])
             org = [x1, y1]
             font = cv2.FONT_HERSHEY_SIMPLEX
             fontScale = 1
@@ -224,29 +241,53 @@ def image_detection():
             thickness = 2
             cv2.putText(img, classNames[cls], org, font, fontScale, color, thickness)
 
-    # Convert the image to a format that can be displayed in CustomTkinter
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img_pil = Image.fromarray(img_rgb)
+    # Check if there are no detections after processing all results
+    if not any(results):
+        detections_textbox.insert("end", "No detections found.\n", "red")
+        print("Text to see if it works")
+    else:
+        for i, r in enumerate(results):
+            boxes = r.boxes
+            for j, box in enumerate(boxes):
+                x1, y1, x2, y2 = box.xyxy[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                confidence = math.ceil((box.conf[0] * 100)) / 100
+                cls = int(box.cls[0])
+                detections_textbox.insert("end", f"Detection {j + 1}:\n")
+                detections_textbox.insert("end", f"Class: {classNames[cls]}\n")
+                detections_textbox.insert("end", f"Confidence: {confidence}\n")
+                detections_textbox.insert("end", f"Coordinates: ({x1}, {y1}) - ({x2}, {y2})\n\n")
 
-    while img_pil.width > 1240 or img_pil.height > 720:
-        img_pil = img_pil.resize((int(img_pil.width / 1.1), int(img_pil.height / 1.1)))
 
-    while img_pil.width < 720 or img_pil.height < 480:
-        img_pil = img_pil.resize((int(img_pil.width * 1.1), int(img_pil.height * 1.1)))
 
-    img_ctk = CTkImage(light_image=img_pil, dark_image=img_pil, size=(img_pil.width, img_pil.height))
+    # Resize the image proportionally
+    max_width = 1280
+    max_height = 720
+    width, height = img.shape[1], img.shape[0]
+    aspect_ratio = width / height
+    if aspect_ratio > max_width / max_height:
+        width = max_width
+        height = int(width / aspect_ratio)
+    else:
+        height = max_height
+        width = int(height * aspect_ratio)
 
-    # if the image is bigger or smaller than the window, resize it to fit the window
+    img = cv2.resize(img, (width, height))
+
+    img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    img_ctk = CTkImage(light_image=img_pil, dark_image=img_pil, size=(width, height))
 
     # Display the image in a Label and move it to the center of the window
     img_label = customtkinter.CTkLabel(img_window, image=img_ctk, text="")
-    img_label.pack(fill="both", expand=False)  # Make the label fill the window
+    img_label.pack(fill="both", expand=True)  # Make the label fill the window
 
     # Keep a reference to the image to prevent garbage collection
     img_label.image = img_ctk
 
     # Bind the ButtonRelease event to the "Go Back" button and check if the mouse pointer is still over the button
     back_button.bind("<ButtonRelease-1>", lambda event: back(event, img_window))
+
 
 def back(event, window):
     if window.winfo_containing(event.x_root, event.y_root) == event.widget:
