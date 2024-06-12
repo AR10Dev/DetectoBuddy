@@ -9,6 +9,8 @@ import PIL
 IMG_PATH = None
 VIDEO_PATH = None
 MODEL_PATH = "Yolo/yolov8n.pt"
+
+
 classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
               "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
               "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
@@ -74,7 +76,7 @@ class AutoDetectorApp(CTk):
         self.video_path.place(relx=0.5, rely=0.65, anchor="center")
 
         self.video_detect_button = CTkButton(master=self.tab_view.tab("Video"), text="Detect now", font=("Arial", 30),
-                                             command=lambda: print("g"), width=150, height=18,
+                                             command=lambda: video_detection(), width=150, height=18,
                                              corner_radius=10)
         self.video_detect_button.place_forget()
 
@@ -128,12 +130,15 @@ class Tabs(CTkTabview):
 
 def open_file_dialog(selection):
     global IMG_PATH
+    global VIDEO_PATH
+
     if selection == 'Image':
         IMG_PATH = filedialog.askopenfilename()
         print_file_path(selection, IMG_PATH)
     elif selection == 'Video':
         VIDEO_PATH = filedialog.askopenfilename()
         print_file_path(selection, VIDEO_PATH)
+
 
 
 def print_file_path(selection, file_path):
@@ -175,8 +180,6 @@ def print_file_path(selection, file_path):
             app.video_path.configure(text="")
             app.video_detect_button.place_forget()
 
-
-# So far, this function will ONLY display the image in a new window. We will implement the detection part later.
 def cv2_to_imagetk():
     image = cv2.imread(IMG_PATH)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -185,11 +188,10 @@ def cv2_to_imagetk():
 
     return imageTk
 
-
 def image_detection():
     # check if the file still exists, or if the file got changed
     if not os.path.exists(IMG_PATH):
-        app.image_error_path_header.configure(text="File not found. Did it get deleted or moved?", text_color="red")
+        app.image_error_path_header.configure(text="Image not found. Did it get deleted or moved?", text_color="red")
         app.image_path_header.configure(text="")
         app.image_path.configure(text="")
         app.image_detect_button.place_forget()
@@ -286,13 +288,132 @@ def image_detection():
     img_label.image = img_ctk
 
     # Bind the ButtonRelease event to the "Go Back" button and check if the mouse pointer is still over the button
-    back_button.bind("<ButtonRelease-1>", lambda event: back(event, img_window))
+    back_button.bind("<ButtonRelease-1>", lambda event: back(event, img_window, None, None))
 
 
-def back(event, window):
+def video_detection():
+    # a function that simply reproduces the video in a customtkinter window.
+
+    # Hide the main window
+    app.withdraw()
+
+    # Load YOLO model
+    model = YOLO(MODEL_PATH)
+
+    # Create a new window to display the detected video
+    video_window = customtkinter.CTkToplevel()
+    video_window.title("Detected Video")
+    video_window.resizable(False, False)
+    video_window.minsize(720, 1080)  # Set minimum size to 720x480
+    video_window.maxsize(1240, 1780)  # Set maximum size to 1240x720
+
+    # Create the "Go Back" button and place it at the top of the window, leaving some margin
+    back_button = customtkinter.CTkButton(video_window, text="Go Back")
+    back_button.pack(pady=10)
+
+
+    # Initialize a variable to keep track of whether the video is paused
+    paused = False
+
+    # Create a text box for detections
+    detections_textbox = customtkinter.CTkTextbox(video_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox.pack(side="top", fill="both", expand=True)
+
+    # Insert a title
+    detections_textbox.insert("end", "Detected Objects\n\n", "title")
+
+    # Create a label to display the video
+    video_label = customtkinter.CTkLabel(video_window)
+    video_label.pack()
+
+    # Create a video capture object
+    cap = cv2.VideoCapture(VIDEO_PATH)
+
+    # Count the number of frames
+    frame_number = 0;
+
+    # Display the video
+    while cap.isOpened():
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        results = model(frame)
+        frame_number += 1
+
+        # Update the textbox
+        detections_textbox.insert("end", f"Detected objects in frame {frame_number}:\n")
+
+        detected_objects = {}  # Dictionary to store detected objects in the frame
+
+        for i, r in enumerate(results):
+            boxes = r.boxes
+
+            for j, box in enumerate(boxes):
+                x1, y1, x2, y2 = box.xyxy[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 255), 3)
+                confidence = math.ceil((box.conf[0] * 100)) / 100
+                cls = int(box.cls[0])
+                org = [x1, y1]
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                fontScale = 1
+                color = (255, 0, 0)
+                thickness = 2
+                cv2.putText(frame, classNames[cls], org, font, fontScale, color, thickness)
+
+
+                cls = int(box.cls[0])
+                class_name = classNames[cls]
+                if class_name not in detected_objects:
+                    detected_objects[class_name] = 1
+                else:
+                    detected_objects[class_name] += 1
+
+        # Append detected objects to the message
+        for obj, count in detected_objects.items():
+            detections_textbox.insert("end", f"{count} {obj}, ")
+
+        # Move to the next line after appending all detected objects
+        detections_textbox.insert("end", "\n\n")
+
+        # Auto-scroll the textbox
+        detections_textbox.yview_moveto(1.0)
+
+        # Convert the image from BGR to RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Convert the image to PIL format
+        img = Image.fromarray(frame)
+
+        # Convert the image to CTkImage format
+        img_ctk = CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
+
+
+        video_label.configure(image=img_ctk, text="")
+        video_label.image = img_ctk
+
+
+        # Update the window
+        video_window.update()
+
+        # Bind the ButtonRelease event to the "Go Back" button
+        back_button.bind("<ButtonRelease-1>", lambda event: back(event, video_window, "video", cap))
+    # Kill the window
+    video_window.destroy()
+
+
+def back(event, window, type, cap):
     if window.winfo_containing(event.x_root, event.y_root) == event.widget:
-        window.destroy()
+        if type == "video":
+            cap.release()
+            app.deiconify()
+            return
+
         app.deiconify()
+        window.destroy()
+
 
 app = AutoDetectorApp()
 app.mainloop()
