@@ -185,19 +185,73 @@ def cv2_to_imagetk():
 
     return imageTk
 def image_detection():
-    new_window = CTk()
-    new_window.title("Detected Image")
-    new_window.geometry("800x600")
-    new_window.resizable(False, False)
+    # Load YOLO model
+    model = YOLO(MODEL_PATH)
 
-    # Load the image with opencv2
-    imagetk = cv2_to_imagetk()
+    # Hide the main window
+    app.withdraw()
 
-    # create a label in the new window to display the image
-    image_label = CTkLabel(master=new_window, image=imagetk)
-    image_label.pack()
+    # Create a new window to display the detected image
+    img_window = customtkinter.CTkToplevel()
+    img_window.title("Detected Image")
+    img_window.resizable(False, False)
+    img_window.minsize(720, 480)  # Set minimum size to 720x480
+    img_window.maxsize(1240, 720)  # Set maximum size to 1240x720
 
-    new_window.mainloop()
+    # Create the "Go Back" button and place it at the top of the window, leaving some margin
+    back_button = customtkinter.CTkButton(img_window, text="Go Back")
+    back_button.pack(pady=10)
+
+    # Load the image
+    img = cv2.imread(IMG_PATH)
+    results = model(img)
+
+    # Process the resized image with YOLO model and draw bounding boxes
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            x1, y1, x2, y2 = box.xyxy[0]
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+            confidence = math.ceil((box.conf[0] * 100)) / 100
+            print("Confidence --->", confidence)
+            cls = int(box.cls[0])
+            print("Class name -->", classNames[cls])
+            org = [x1, y1]
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            fontScale = 1
+            color = (255, 0, 0)
+            thickness = 2
+            cv2.putText(img, classNames[cls], org, font, fontScale, color, thickness)
+
+    # Convert the image to a format that can be displayed in CustomTkinter
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_pil = Image.fromarray(img_rgb)
+
+    while img_pil.width > 1240 or img_pil.height > 720:
+        img_pil = img_pil.resize((int(img_pil.width / 1.1), int(img_pil.height / 1.1)))
+
+    while img_pil.width < 720 or img_pil.height < 480:
+        img_pil = img_pil.resize((int(img_pil.width * 1.1), int(img_pil.height * 1.1)))
+
+    img_ctk = CTkImage(light_image=img_pil, dark_image=img_pil, size=(img_pil.width, img_pil.height))
+
+    # if the image is bigger or smaller than the window, resize it to fit the window
+
+    # Display the image in a Label and move it to the center of the window
+    img_label = customtkinter.CTkLabel(img_window, image=img_ctk, text="")
+    img_label.pack(fill="both", expand=False)  # Make the label fill the window
+
+    # Keep a reference to the image to prevent garbage collection
+    img_label.image = img_ctk
+
+    # Bind the ButtonRelease event to the "Go Back" button and check if the mouse pointer is still over the button
+    back_button.bind("<ButtonRelease-1>", lambda event: back(event, img_window))
+
+def back(event, window):
+    if window.winfo_containing(event.x_root, event.y_root) == event.widget:
+        window.destroy()
+        app.deiconify()
 
 app = AutoDetectorApp()
 app.mainloop()
