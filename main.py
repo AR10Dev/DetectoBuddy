@@ -5,6 +5,8 @@ import cv2
 import math
 from PIL import Image, ImageTk
 import PIL
+import threading
+import queue
 
 IMG_PATH = None
 VIDEO_PATH = None
@@ -416,17 +418,101 @@ def video_detection():
     # Kill the window
     video_window.destroy()
 
+# a simple function that starts the webcam and detects objects in real-time.
 def webcam_detection():
+    # close the main window
+    app.withdraw()
 
-    # Check if a valid webcam is connected
+    # Create a new window to display the webcam feed
+    webcam_window = customtkinter.CTkToplevel()
+    webcam_window.title("Webcam Feed")
+    webcam_window.resizable(False, False)
+    webcam_window.minsize(720, 720)
+
+    # Create the "Go Back" button and place it at the top of the window, leaving some margin
+    back_button = customtkinter.CTkButton(webcam_window, text="Go Back")
+    back_button.pack(pady=10)
+
+    # Create a text box for detections
+    detections_textbox = customtkinter.CTkTextbox(webcam_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox.pack(side="top", fill="both", expand=True)
+
+    # Insert a title
+    detections_textbox.insert("end", "Detected Objects\n\n", "title")
+
+    # Create a label to display the webcam feed
+    webcam_label = customtkinter.CTkLabel(webcam_window)
+    webcam_label.pack()
+
+    # initialize the webcam and model
     cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        no_webcam_label = CTkLabel(master=app.tab_view.tab("Webcam"), text="No webcam connected", font=("Arial", 20), text_color="red")
-        no_webcam_label.place(relx=0.5, rely=0.7, anchor="center")
-    else:
-        pass
+    model = YOLO(MODEL_PATH)
 
+    while True:
+        success, img = cap.read()
 
+        # Resize the frame to fit the window
+        img = cv2.resize(img, (720, 480))
+
+        # Invert the frame
+        inverted_img = cv2.flip(img, 1)
+        results = model(inverted_img, stream=True)
+
+        # coordinates
+        for r in results:
+            boxes = r.boxes
+
+            for box in boxes:
+                # bounding box
+                x1, y1, x2, y2 = box.xyxy[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)  # convert to int values
+
+                # put box in cam
+                cv2.rectangle(inverted_img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+
+                # confidence
+                confidence = math.ceil((box.conf[0] * 100)) / 100
+
+                # class name
+                cls = int(box.cls[0])
+
+                # object details
+                org = [x1, y1]
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                fontScale = 1
+                color = (255, 0, 0)
+                thickness = 2
+
+                cv2.putText(inverted_img, classNames[cls], org, font, fontScale, color, thickness)
+
+                detections_textbox.yview_moveto(1.0)
+
+                # Update the textbox
+                detections_textbox.insert("end", f"Detected {classNames[cls]} with confidence {confidence}\n")
+
+        # Convert the image from BGR to RGB
+        inverted_img = cv2.cvtColor(inverted_img, cv2.COLOR_BGR2RGB)
+
+        # Convert the image to PIL format
+        img_pil = Image.fromarray(inverted_img)
+
+        # Convert the image to CTkImage format
+        img_ctk = CTkImage(light_image=img_pil, dark_image=img_pil, size=(img_pil.width, img_pil.height))
+
+        webcam_label.configure(image=img_ctk, text="")
+        webcam_label.image = img_ctk
+
+        # Update the window
+        webcam_window.update()
+
+        # Bind the ButtonRelease event to the "Go Back" button
+        back_button.bind("<ButtonRelease-1>", lambda event: back(event, webcam_window, "webcam", cap))
+
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
 
 def back(event, window, type, cap):
     if window.winfo_containing(event.x_root, event.y_root) == event.widget:
@@ -434,6 +520,9 @@ def back(event, window, type, cap):
             cap.release()
             app.deiconify()
             return
+
+        if type == "webcam":
+            cap.release()
 
         app.deiconify()
         window.destroy()
