@@ -424,7 +424,7 @@ def webcam_detection():
         no_webcam_label = CTkLabel(master=app.tab_view.tab("Webcam"), text="No webcam connected", font=("Arial", 20), text_color="red")
         no_webcam_label.place(relx=0.5, rely=0.7, anchor="center")
     else:
-        pass()
+        pass
 
 
 
