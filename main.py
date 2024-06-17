@@ -127,6 +127,19 @@ class Tabs(CTkTabview):
                                              corner_radius=10)
         video_select_file_button.place(relx=0.5, rely=0.4, anchor="center")
 
+        # Webcam tab content
+        webcam_title = CTkLabel(master=self.tab("Webcam"), text="Detection from", font=("Arial", 30))
+        webcam_title.place(relx=0.5, rely=0.1, anchor="center")
+        webcam_subtitle = CTkLabel(master=self.tab("Webcam"), text="Webcam", font=("Arial", 40), text_color="#007bff")
+        webcam_subtitle.place(relx=0.5, rely=0.2, anchor="center")
+
+        webcam_start_button = CTkButton(master=self.tab("Webcam"), text="Start Webcam", font=("Arial", 30),
+                                             command=lambda: webcam_detection(), width=150, height=18,
+                                             corner_radius=10)
+        webcam_start_button.place(relx=0.5, rely=0.4, anchor="center")
+
+
+
 
 def open_file_dialog(selection):
     global IMG_PATH
@@ -402,6 +415,17 @@ def video_detection():
         back_button.bind("<ButtonRelease-1>", lambda event: back(event, video_window, "video", cap))
     # Kill the window
     video_window.destroy()
+
+def webcam_detection():
+
+    # Check if a valid webcam is connected
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        no_webcam_label = CTkLabel(master=app.tab_view.tab("Webcam"), text="No webcam connected", font=("Arial", 20), text_color="red")
+        no_webcam_label.place(relx=0.5, rely=0.7, anchor="center")
+    else:
+        pass()
+
 
 
 def back(event, window, type, cap):
