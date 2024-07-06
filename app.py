@@ -9,9 +9,6 @@ class AutoDetectorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Download YOLO model
-        self.download_yolo_model()
-
         # Set window title and disable resizing
         self.title("AutoDetector v1.0.0")
         self.resizable(False, False)
