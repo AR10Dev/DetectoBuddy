@@ -1,3 +1,6 @@
+VIDEO_PATH=None
+IMG_PATH=None
+
 classNames = [
     "person",
     "bicycle",

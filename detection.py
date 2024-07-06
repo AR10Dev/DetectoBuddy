@@ -7,7 +7,7 @@ import requests
 from PIL import Image
 from ultralytics import YOLO
 
-from constants import classNames
+from constants import classNames, IMG_PATH, VIDEO_PATH
 from utils import back
 
 
@@ -23,25 +23,29 @@ def download_model_if_not_exists(
     :param model_name:  (Default value = "yolo.pt")
 
     """
+    print("Starting the download process...")
     # Ensure the models folder exists
     os.makedirs(model_folder, exist_ok=True)
+    print(f"Ensured {model_folder} folder exists.")
 
     model_path = os.path.join(model_folder, model_name)
 
     # Check if the model already exists
     if not os.path.isfile(model_path):
+        print(f"{model_name} not found. Starting download...")
         # Download the model
         response = requests.get(model_url, stream=True)
         if response.status_code == 200:
             with open(model_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
+            print(f"Downloaded {model_name} successfully.")
         else:
             raise Exception(f"Failed to download {model_name}.")
     else:
-        raise Exception(f"{model_name} already exists.")
+        print(f"{model_name} already exists.")
 
-    return model_path
+    return model_path 
 
 
 def image_detection(app):
@@ -50,7 +54,11 @@ def image_detection(app):
     :param app:
 
     """
-    global IMG_PATH
+    
+
+    print("Starting image detection...")
+    print(f"Image path: {IMG_PATH}")
+
     # check if the file still exists, or if the file got changed
     if not os.path.exists(IMG_PATH):
         app.image_error_path_header.configure(
@@ -61,8 +69,10 @@ def image_detection(app):
         app.image_detect_button.place_forget()
         return
 
+    model_path = download_model_if_not_exists()
+
     # Load YOLO model
-    model = YOLO(download_model_if_not_exists())
+    model = YOLO(model_path)
 
     # Hide the main window
     app.withdraw()
@@ -163,12 +173,13 @@ def video_detection(app):
     :param app:
 
     """
-    global VIDEO_PATH
     # Hide the main window
     app.withdraw()
 
+    model_path = download_model_if_not_exists()
+
     # Load YOLO model
-    model = YOLO(download_model_if_not_exists())
+    model = YOLO(model_path)
 
     # Create a new window to display the detected video
     video_window = ctk.CTkToplevel()
@@ -316,7 +327,11 @@ def webcam_detection(app):
 
     # Initialize the webcam and model
     cap = cv2.VideoCapture(0)
-    model = YOLO(download_model_if_not_exists())
+    
+    model_path = download_model_if_not_exists()
+
+    # Load YOLO model
+    model = YOLO(model_path)
 
     while True:
         success, img = cap.read()

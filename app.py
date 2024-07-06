@@ -1,8 +1,5 @@
-import os
-import tempfile
 
 import customtkinter as ctk
-import requests
 
 from tabs import Tabs
 

@@ -1,28 +1,27 @@
-import os
 import cv2
 from PIL import Image, ImageTk
-import customtkinter as ctk
 from tkinter import filedialog
+import constants
 
 def open_file_dialog(selection, app):
-    global IMG_PATH
-    global VIDEO_PATH
-
     if selection == 'Image':
-        IMG_PATH = filedialog.askopenfilename()
-        print_file_path(selection, IMG_PATH, app)
+        constants.IMG_PATH = filedialog.askopenfilename()
+        print_file_path(selection, app)
     elif selection == 'Video':
-        VIDEO_PATH = filedialog.askopenfilename()
-        print_file_path(selection, VIDEO_PATH, app)
+        constants.VIDEO_PATH = filedialog.askopenfilename()
+        print_file_path(selection, app)
 
-def print_file_path(selection, file_path, app):
+def print_file_path(selection, app):
+    IMG_PATH = constants.IMG_PATH
+    VIDEO_PATH = constants.VIDEO_PATH
+       
     if selection == 'Image':
-        if file_path.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')):
+        if IMG_PATH.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')):
             app.image_path_header.configure(text="Currently selected image", text_color="green")
             app.image_error_path_header.configure(text="")
-            app.image_path.configure(text=file_path)
+            app.image_path.configure(text=IMG_PATH)
             app.image_detect_button.place(relx=0.5, rely=0.85, anchor="center")
-        elif file_path == "":
+        elif IMG_PATH == "":
             app.image_error_path_header.configure(text="No file selected", text_color="red")
             app.image_path_header.configure(text="")
             app.image_path.configure(text="")
@@ -34,12 +33,12 @@ def print_file_path(selection, file_path, app):
             app.image_detect_button.place_forget()
 
     elif selection == 'Video':
-        if file_path.endswith(('.mp4', '.avi', '.mov', '.flv', '.wmv', '.mkv')):
+        if VIDEO_PATH.endswith(('.mp4', '.avi', '.mov', '.flv', '.wmv', '.mkv')):
             app.video_path_header.configure(text="Currently selected video", text_color="green")
             app.video_error_path_header.configure(text="")
-            app.video_path.configure(text=file_path)
+            app.video_path.configure(text=VIDEO_PATH)
             app.video_detect_button.place(relx=0.5, rely=0.85, anchor="center")
-        elif file_path == "":
+        elif VIDEO_PATH == "":
             app.video_error_path_header.configure(text="No file selected", text_color="red")
             app.video_path_header.configure(text="")
             app.video_path.configure(text="")
