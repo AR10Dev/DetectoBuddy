@@ -15,7 +15,7 @@ class Tabs(ctk.CTkTabview):
         # Home tab content
         home_title = ctk.CTkLabel(master=self.tab("Home"), text="Welcome to", font=("Arial", 40))
         home_title.place(relx=0.5, rely=0.1, anchor="center")
-        home_subtitle = ctk.CTkLabel(master=self.tab("Home"), text="AutoDetector", font=("Arial", 60), text_color="#007bff")
+        home_subtitle = ctk.CTkLabel(master=self.tab("Home"), text="DetectoBuddy", font=("Arial", 60), text_color="#007bff")
         home_subtitle.place(relx=0.5, rely=0.2, anchor="center")
         home_description = ctk.CTkLabel(master=self.tab("Home"),
                                         text="This is a simple object detection application that can detect\nobjects in images, videos, and webcam\n\n\n\nUse the tabs to navigate the application.",
