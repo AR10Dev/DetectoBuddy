@@ -26,10 +26,12 @@ class AutoDetectorApp(ctk.CTk):
         self.initialize_video_tab_elements()
 
     def download_yolo_model(self):
-        model_url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
+        model_url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt"
         
+        # Check if the model exists
         if not os.path.exists(MODEL_PATH):
             os.makedirs(MODEL_PATH, exist_ok=True)
+            # Download the model
             response = requests.get(model_url)
             if response.status_code == 200:    
                 with open(MODEL_PATH, "wb") as model_file:
