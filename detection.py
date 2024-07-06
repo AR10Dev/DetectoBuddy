@@ -47,7 +47,7 @@ def download_model_if_not_exists(
 def image_detection(app):
     """
 
-    :param app: 
+    :param app:
 
     """
     global IMG_PATH
@@ -160,7 +160,7 @@ def image_detection(app):
 def video_detection(app):
     """
 
-    :param app: 
+    :param app:
 
     """
     global VIDEO_PATH
@@ -282,7 +282,7 @@ def video_detection(app):
 def webcam_detection(app):
     """
 
-    :param app: 
+    :param app:
 
     """
     # close the main window
