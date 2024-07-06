@@ -1,8 +1,10 @@
-import customtkinter as ctk
-from tabs import Tabs
 import os
-import requests
 import tempfile
+
+import customtkinter as ctk
+import requests
+
+from tabs import Tabs
 
 
 class AutoDetectorApp(ctk.CTk):

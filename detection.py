@@ -1,12 +1,14 @@
-import os
-import requests
-import cv2
 import math
+import os
+
+import customtkinter as ctk
+import cv2
+import requests
 from PIL import Image
 from ultralytics import YOLO
-import customtkinter as ctk
-from utils import back
+
 from constants import classNames
+from utils import back
 
 
 def download_model_if_not_exists(
