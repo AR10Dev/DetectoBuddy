@@ -5,7 +5,8 @@ setup(
     name="DetectoBuddy",
     version="0.1.0",
     author="AR10Dev & LF-D3v",
-    description="An advanced object detection application to identify objects in images, videos, and live webcam feeds",
+    description=
+    "An advanced object detection application to identify objects in images, videos, and live webcam feeds",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/AR10Dev/DetectoBuddy",
