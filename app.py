@@ -24,8 +24,7 @@ class DetectoBuddyApp(ctk.CTk):
     def initialize_image_tab_elements(self):
         """ """
         self.image_path_header = ctk.CTkLabel(
-            master=self.tab_view.tab("Image"), text="", font=("Arial", 20)
-        )
+            master=self.tab_view.tab("Image"), text="", font=("Arial", 20))
         self.image_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
         self.image_error_path_header = ctk.CTkLabel(
@@ -36,9 +35,9 @@ class DetectoBuddyApp(ctk.CTk):
         )
         self.image_error_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-        self.image_path = ctk.CTkLabel(
-            master=self.tab_view.tab("Image"), text="", font=("Arial", 15)
-        )
+        self.image_path = ctk.CTkLabel(master=self.tab_view.tab("Image"),
+                                       text="",
+                                       font=("Arial", 15))
         self.image_path.place(relx=0.5, rely=0.65, anchor="center")
 
         self.image_detect_button = ctk.CTkButton(
@@ -55,8 +54,7 @@ class DetectoBuddyApp(ctk.CTk):
     def initialize_video_tab_elements(self):
         """ """
         self.video_path_header = ctk.CTkLabel(
-            master=self.tab_view.tab("Video"), text="", font=("Arial", 20)
-        )
+            master=self.tab_view.tab("Video"), text="", font=("Arial", 20))
         self.video_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
         self.video_error_path_header = ctk.CTkLabel(
@@ -67,9 +65,9 @@ class DetectoBuddyApp(ctk.CTk):
         )
         self.video_error_path_header.place(relx=0.5, rely=0.6, anchor="center")
 
-        self.video_path = ctk.CTkLabel(
-            master=self.tab_view.tab("Video"), text="", font=("Arial", 15)
-        )
+        self.video_path = ctk.CTkLabel(master=self.tab_view.tab("Video"),
+                                       text="",
+                                       font=("Arial", 15))
         self.video_path.place(relx=0.5, rely=0.65, anchor="center")
 
         self.video_detect_button = ctk.CTkButton(
