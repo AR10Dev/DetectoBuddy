@@ -4,6 +4,7 @@ from utils import open_file_dialog
 
 
 class Tabs(ctk.CTkTabview):
+    """ """
     def __init__(self, master, app, **kwargs):
         super().__init__(master, **kwargs)
         self.app = app
