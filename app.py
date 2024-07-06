@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tabs import Tabs
 import os
 import requests
+import tempfile
 from constants import MODEL_PATH
 
 
@@ -25,12 +26,14 @@ class AutoDetectorApp(ctk.CTk):
         self.initialize_video_tab_elements()
 
     def download_yolo_model(self):
+        model_url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
+        
         if not os.path.exists(MODEL_PATH):
             os.makedirs(MODEL_PATH, exist_ok=True)
-            model_url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
             response = requests.get(model_url)
-            with open(os.path.join(MODEL_PATH, "yolov8n.pt"), "wb") as model_file:
-                model_file.write(response.content)
+            if response.status_code == 200:    
+                with open(MODEL_PATH, "wb") as model_file:
+                    model_file.write(response.content)
 
     def initialize_image_tab_elements(self):
         self.image_path_header = ctk.CTkLabel(

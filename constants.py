@@ -1,4 +1,4 @@
-MODEL_PATH = "Yolo/yolov8n.pt"
+MODEL_PATH = "yolo.pt"
 
 classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
               "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
