@@ -1,5 +1,5 @@
-from app import AutoDetectorApp
+from app import DetectoBuddyApp
 
 if __name__ == "__main__":
-    app = AutoDetectorApp()
+    app = DetectoBuddyApp()
     app.mainloop()

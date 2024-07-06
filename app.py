@@ -1,17 +1,16 @@
-
 import customtkinter as ctk
 
 from tabs import Tabs
 
 
-class AutoDetectorApp(ctk.CTk):
+class DetectoBuddyApp(ctk.CTk):
     """ """
 
     def __init__(self):
         super().__init__()
 
         # Set window title and disable resizing
-        self.title("AutoDetector v1.0.0")
+        self.title("DetectoBuddy v0.1.0")
         self.resizable(False, False)
 
         # Create tab view
