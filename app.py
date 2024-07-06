@@ -8,6 +8,7 @@ from tabs import Tabs
 
 
 class AutoDetectorApp(ctk.CTk):
+    """ """
     def __init__(self):
         super().__init__()
 
@@ -24,6 +25,7 @@ class AutoDetectorApp(ctk.CTk):
         self.initialize_video_tab_elements()
 
     def initialize_image_tab_elements(self):
+        """ """
         self.image_path_header = ctk.CTkLabel(
             master=self.tab_view.tab("Image"), text="", font=("Arial", 20)
         )
@@ -54,6 +56,7 @@ class AutoDetectorApp(ctk.CTk):
         self.image_detect_button.place_forget()
 
     def initialize_video_tab_elements(self):
+        """ """
         self.video_path_header = ctk.CTkLabel(
             master=self.tab_view.tab("Video"), text="", font=("Arial", 20)
         )
@@ -84,16 +87,19 @@ class AutoDetectorApp(ctk.CTk):
         self.video_detect_button.place_forget()
 
     def image_detection(self):
+        """ """
         from detection import image_detection
 
         image_detection(self)
 
     def video_detection(self):
+        """ """
         from detection import video_detection
 
         video_detection(self)
 
     def webcam_detection(self):
+        """ """
         from detection import webcam_detection
 
         webcam_detection(self)

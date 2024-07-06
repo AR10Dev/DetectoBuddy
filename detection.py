@@ -16,6 +16,13 @@ def download_model_if_not_exists(
     model_folder="models",
     model_name="yolo.pt",
 ):
+    """
+
+    :param model_url:  (Default value = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt")
+    :param model_folder:  (Default value = "models")
+    :param model_name:  (Default value = "yolo.pt")
+
+    """
     # Ensure the models folder exists
     os.makedirs(model_folder, exist_ok=True)
 
@@ -38,6 +45,11 @@ def download_model_if_not_exists(
 
 
 def image_detection(app):
+    """
+
+    :param app: 
+
+    """
     global IMG_PATH
     # check if the file still exists, or if the file got changed
     if not os.path.exists(IMG_PATH):
@@ -146,6 +158,11 @@ def image_detection(app):
 
 
 def video_detection(app):
+    """
+
+    :param app: 
+
+    """
     global VIDEO_PATH
     # Hide the main window
     app.withdraw()
@@ -263,6 +280,11 @@ def video_detection(app):
 
 
 def webcam_detection(app):
+    """
+
+    :param app: 
+
+    """
     # close the main window
     app.withdraw()
 
