@@ -3,7 +3,6 @@ from tabs import Tabs
 import os
 import requests
 import tempfile
-from constants import MODEL_PATH
 
 
 class AutoDetectorApp(ctk.CTk):
@@ -24,18 +23,6 @@ class AutoDetectorApp(ctk.CTk):
         # Initialize Image and Video tab elements
         self.initialize_image_tab_elements()
         self.initialize_video_tab_elements()
-
-    def download_yolo_model(self):
-        model_url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt"
-        
-        # Check if the model exists
-        if not os.path.exists(MODEL_PATH):
-            os.makedirs(MODEL_PATH, exist_ok=True)
-            # Download the model
-            response = requests.get(model_url)
-            if response.status_code == 200:    
-                with open(MODEL_PATH, "wb") as model_file:
-                    model_file.write(response.content)
 
     def initialize_image_tab_elements(self):
         self.image_path_header = ctk.CTkLabel(

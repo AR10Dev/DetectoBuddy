@@ -1,11 +1,33 @@
 import os
+import requests
 import cv2
 import math
 from PIL import Image
 from ultralytics import YOLO
 import customtkinter as ctk
 from utils import back
-from constants import MODEL_PATH, classNames
+from constants import classNames
+
+def download_model_if_not_exists(model_url='https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt', model_folder='models', model_name='yolo.pt'):
+    # Ensure the models folder exists
+    os.makedirs(model_folder, exist_ok=True)
+    
+    model_path = os.path.join(model_folder, model_name)
+    
+    # Check if the model already exists
+    if not os.path.isfile(model_path):
+        # Download the model
+        response = requests.get(model_url, stream=True)
+        if response.status_code == 200:
+            with open(model_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        else:
+            raise Exception(f"Failed to download {model_name}.")
+    else:
+        raise Exception(f"{model_name} already exists.")
+
+    return model_path
 
 def image_detection(app):
     global IMG_PATH
@@ -18,7 +40,7 @@ def image_detection(app):
         return
 
     # Load YOLO model
-    model = YOLO(MODEL_PATH)
+    model = YOLO(download_model_if_not_exists())
 
     # Hide the main window
     app.withdraw()
@@ -110,7 +132,7 @@ def video_detection(app):
     app.withdraw()
 
     # Load YOLO model
-    model = YOLO(MODEL_PATH)
+    model = YOLO(download_model_if_not_exists())
 
     # Create a new window to display the detected video
     video_window = ctk.CTkToplevel()
@@ -238,7 +260,7 @@ def webcam_detection(app):
 
     # Initialize the webcam and model
     cap = cv2.VideoCapture(0)
-    model = YOLO(MODEL_PATH)
+    model = YOLO(download_model_if_not_exists())
 
     while True:
         success, img = cap.read()
