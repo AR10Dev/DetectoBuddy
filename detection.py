@@ -1,25 +1,39 @@
-import os
-import requests
-import cv2
 import math
+import os
+
+import customtkinter as ctk
+import cv2
+import requests
 from PIL import Image
 from ultralytics import YOLO
-import customtkinter as ctk
-from utils import back
-from constants import classNames
 
-def download_model_if_not_exists(model_url='https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt', model_folder='models', model_name='yolo.pt'):
+from constants import classNames
+from utils import back
+
+
+def download_model_if_not_exists(
+    model_url="https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt",
+    model_folder="models",
+    model_name="yolo.pt",
+):
+    """
+
+    :param model_url:  (Default value = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov10n.pt")
+    :param model_folder:  (Default value = "models")
+    :param model_name:  (Default value = "yolo.pt")
+
+    """
     # Ensure the models folder exists
     os.makedirs(model_folder, exist_ok=True)
-    
+
     model_path = os.path.join(model_folder, model_name)
-    
+
     # Check if the model already exists
     if not os.path.isfile(model_path):
         # Download the model
         response = requests.get(model_url, stream=True)
         if response.status_code == 200:
-            with open(model_path, 'wb') as f:
+            with open(model_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
         else:
@@ -29,11 +43,19 @@ def download_model_if_not_exists(model_url='https://github.com/ultralytics/asset
 
     return model_path
 
+
 def image_detection(app):
+    """
+
+    :param app:
+
+    """
     global IMG_PATH
     # check if the file still exists, or if the file got changed
     if not os.path.exists(IMG_PATH):
-        app.image_error_path_header.configure(text="Image not found. Did it get deleted or moved?", text_color="red")
+        app.image_error_path_header.configure(
+            text="Image not found. Did it get deleted or moved?",
+            text_color="red")
         app.image_path_header.configure(text="")
         app.image_path.configure(text="")
         app.image_detect_button.place_forget()
@@ -57,10 +79,13 @@ def image_detection(app):
     back_button.pack(pady=10)
 
     # Create a text box for detections
-    detections_textbox = ctk.CTkTextbox(img_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox = ctk.CTkTextbox(img_window,
+                                        width=80,
+                                        height=20,
+                                        font=("Arial", 15))
     detections_textbox.pack(side="top", fill="both", expand=True)
 
-        # Insert a title
+    # Insert a title
     detections_textbox.insert("end", "Detected Objects\n\n", "title")
 
     # Load the image
@@ -81,7 +106,8 @@ def image_detection(app):
             fontScale = 1
             color = (255, 0, 0)
             thickness = 2
-            cv2.putText(img, classNames[cls], org, font, fontScale, color, thickness)
+            cv2.putText(img, classNames[cls], org, font, fontScale, color,
+                        thickness)
 
     # Check if there are no detections after processing all results
     if not any(results):
@@ -97,7 +123,8 @@ def image_detection(app):
                 detections_textbox.insert("end", f"Detection {j + 1}:\n")
                 detections_textbox.insert("end", f"Class: {classNames[cls]}\n")
                 detections_textbox.insert("end", f"Confidence: {confidence}\n")
-                detections_textbox.insert("end", f"Coordinates: ({x1}, {y1}) - ({x2}, {y2})\n\n")
+                detections_textbox.insert(
+                    "end", f"Coordinates: ({x1}, {y1}) - ({x2}, {y2})\n\n")
 
     # Resize the image proportionally
     max_width = 1280
@@ -114,7 +141,9 @@ def image_detection(app):
     img = cv2.resize(img, (width, height))
 
     img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    img_ctk = ctk.CTkImage(light_image=img_pil, dark_image=img_pil, size=(width, height))
+    img_ctk = ctk.CTkImage(light_image=img_pil,
+                           dark_image=img_pil,
+                           size=(width, height))
 
     # Display the image in a Label and move it to the center of the window
     img_label = ctk.CTkLabel(img_window, image=img_ctk, text="")
@@ -124,9 +153,16 @@ def image_detection(app):
     img_label.image = img_ctk
 
     # Bind the ButtonRelease event to the "Go Back" button and check if the mouse pointer is still over the button
-    back_button.bind("<ButtonRelease-1>", lambda event: back(event, img_window, None, None, app))
+    back_button.bind("<ButtonRelease-1>",
+                     lambda event: back(event, img_window, None, None, app))
+
 
 def video_detection(app):
+    """
+
+    :param app:
+
+    """
     global VIDEO_PATH
     # Hide the main window
     app.withdraw()
@@ -149,7 +185,10 @@ def video_detection(app):
     paused = False
 
     # Create a text box for detections
-    detections_textbox = ctk.CTkTextbox(video_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox = ctk.CTkTextbox(video_window,
+                                        width=80,
+                                        height=20,
+                                        font=("Arial", 15))
     detections_textbox.pack(side="top", fill="both", expand=True)
 
     # Insert a title
@@ -176,9 +215,11 @@ def video_detection(app):
         frame_number += 1
 
         # Update the textbox
-        detections_textbox.insert("end", f"Detected objects in frame {frame_number}:\n")
+        detections_textbox.insert(
+            "end", f"Detected objects in frame {frame_number}:\n")
 
-        detected_objects = {}  # Dictionary to store detected objects in the frame
+        detected_objects = {
+        }  # Dictionary to store detected objects in the frame
 
         for i, r in enumerate(results):
             boxes = r.boxes
@@ -194,7 +235,8 @@ def video_detection(app):
                 fontScale = 1
                 color = (255, 0, 0)
                 thickness = 2
-                cv2.putText(frame, classNames[cls], org, font, fontScale, color, thickness)
+                cv2.putText(frame, classNames[cls], org, font, fontScale,
+                            color, thickness)
 
                 cls = int(box.cls[0])
                 class_name = classNames[cls]
@@ -220,7 +262,9 @@ def video_detection(app):
         img = Image.fromarray(frame)
 
         # Convert the image to CTkImage format
-        img_ctk = ctk.CTkImage(light_image=img, dark_image=img, size=(img.width, img.height))
+        img_ctk = ctk.CTkImage(light_image=img,
+                               dark_image=img,
+                               size=(img.width, img.height))
 
         video_label.configure(image=img_ctk, text="")
         video_label.image = img_ctk
@@ -229,11 +273,20 @@ def video_detection(app):
         video_window.update()
 
         # Bind the ButtonRelease event to the "Go Back" button
-        back_button.bind("<ButtonRelease-1>", lambda event: back(event, video_window, "video", cap, app))
+        back_button.bind(
+            "<ButtonRelease-1>",
+            lambda event: back(event, video_window, "video", cap, app),
+        )
     # Kill the window
     video_window.destroy()
 
+
 def webcam_detection(app):
+    """
+
+    :param app:
+
+    """
     # close the main window
     app.withdraw()
 
@@ -248,7 +301,10 @@ def webcam_detection(app):
     back_button.pack(pady=10)
 
     # Create a text box for detections
-    detections_textbox = ctk.CTkTextbox(webcam_window, width=80, height=20, font=("Arial", 15))
+    detections_textbox = ctk.CTkTextbox(webcam_window,
+                                        width=80,
+                                        height=20,
+                                        font=("Arial", 15))
     detections_textbox.pack(side="top", fill="both", expand=True)
 
     # Insert a title
@@ -265,7 +321,7 @@ def webcam_detection(app):
     while True:
         success, img = cap.read()
 
-                # Resize the frame to fit the window
+        # Resize the frame to fit the window
         img = cv2.resize(img, (720, 480))
 
         # Invert the frame
@@ -279,10 +335,16 @@ def webcam_detection(app):
             for box in boxes:
                 # Bounding box
                 x1, y1, x2, y2 = box.xyxy[0]
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)  # Convert to int values
+                x1, y1, x2, y2 = (
+                    int(x1),
+                    int(y1),
+                    int(x2),
+                    int(y2),
+                )  # Convert to int values
 
                 # Put box in cam
-                cv2.rectangle(inverted_img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+                cv2.rectangle(inverted_img, (x1, y1), (x2, y2), (255, 0, 255),
+                              3)
 
                 # Confidence
                 confidence = math.ceil((box.conf[0] * 100)) / 100
@@ -297,12 +359,23 @@ def webcam_detection(app):
                 color = (255, 0, 0)
                 thickness = 2
 
-                cv2.putText(inverted_img, classNames[cls], org, font, fontScale, color, thickness)
+                cv2.putText(
+                    inverted_img,
+                    classNames[cls],
+                    org,
+                    font,
+                    fontScale,
+                    color,
+                    thickness,
+                )
 
                 detections_textbox.yview_moveto(1.0)
 
                 # Update the textbox
-                detections_textbox.insert("end", f"Detected {classNames[cls]} with confidence {confidence}\n")
+                detections_textbox.insert(
+                    "end",
+                    f"Detected {classNames[cls]} with confidence {confidence}\n"
+                )
 
         # Convert the image from BGR to RGB
         inverted_img = cv2.cvtColor(inverted_img, cv2.COLOR_BGR2RGB)
@@ -311,7 +384,11 @@ def webcam_detection(app):
         img_pil = Image.fromarray(inverted_img)
 
         # Convert the image to CTkImage format
-        img_ctk = ctk.CTkImage(light_image=img_pil, dark_image=img_pil, size=(img_pil.width, img_pil.height))
+        img_ctk = ctk.CTkImage(
+            light_image=img_pil,
+            dark_image=img_pil,
+            size=(img_pil.width, img_pil.height),
+        )
 
         webcam_label.configure(image=img_ctk, text="")
         webcam_label.image = img_ctk
@@ -320,9 +397,12 @@ def webcam_detection(app):
         webcam_window.update()
 
         # Bind the ButtonRelease event to the "Go Back" button
-        back_button.bind("<ButtonRelease-1>", lambda event: back(event, webcam_window, "webcam", cap, app))
+        back_button.bind(
+            "<ButtonRelease-1>",
+            lambda event: back(event, webcam_window, "webcam", cap, app),
+        )
 
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == ord("q"):
             break
 
     cap.release()
