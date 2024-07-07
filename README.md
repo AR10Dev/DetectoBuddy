@@ -19,8 +19,8 @@ DetectoBuddy is an advanced object detection application that utilizes the YOLO 
 1. Clone the repository:
 
    ```
-   git clone https://github.com/yourusername/detectobuddy.git
-   cd detectobuddy
+   git clone https://github.com/AR10Dev/DetectoBuddy.git
+   cd DetectoBuddy
    ```
 
 2. Install the required dependencies:
